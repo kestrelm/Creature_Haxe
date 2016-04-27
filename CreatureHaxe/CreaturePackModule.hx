@@ -6,7 +6,12 @@ import haxe.io.Bytes;
 import haxe.io.Float64Array;
 import org.msgpack.Decoder;
 import org.msgpack.MsgPack;
+
+#if flash
 import flash.Vector;
+#else
+import openfl.Vector;
+#end
 
 class CreatureTimeSample
 {
@@ -188,6 +193,8 @@ class CreaturePackLoader {
 	var headerList : Array<String>;
 	var animPairsOffsetList : Array<Int>;
 	
+	
+#if flash	
 	public function new(byteArray:flash.utils.ByteArray)
 	{
 		getDecoder(byteArray);
@@ -205,10 +212,34 @@ class CreaturePackLoader {
 		
 		return bytes;
 	}
+#else
+	public function new(byteArray: openfl.utils.ByteArray)
+	{
+		getDecoder(byteArray);
+	}
+	
+	function toBytes(byteArray: openfl.utils.ByteArray):Bytes 
+	{
+		byteArray.position = 0; 
+		var bytes:Bytes = Bytes.alloc(byteArray.length); 
+		while (byteArray.bytesAvailable > 0) { 
+			var position = byteArray.position;
+			bytes.set(position, 
+			byteArray.readByte());
+		}
+		
+		return bytes;
+	}
+#end
 	
 	function getDecoder(byteArray:flash.utils.ByteArray): Array<Dynamic>
 	{
 		var convertData = toBytes(byteArray);
+		return getBaseDecoder(convertData);
+	}
+	
+	function getBaseDecoder(convertData : Bytes): Array<Dynamic>
+	{
 		fileData = MsgPack.decode(convertData);
 		
 		headerList = fileData[getBaseOffset()];
@@ -248,6 +279,7 @@ class CreaturePackLoader {
 		}
 		
 		return fileData;
+
 	}
 	
 	public function updateIndices(idx:Int)
