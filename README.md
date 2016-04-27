@@ -4,7 +4,7 @@ This repository contains the **Creature Haxe Plugin** for the **Creature Animati
 
 
 ##Live Demo
-A live web demonstration of a **running UtahRaptor** using the plugin in **Flash** and **HaxeFlixel** is [here](http://www.kestrelmoon.com/creature/WebDemo/demo_flash.html). The demo shows a dinosaur animated with deformaing meshes exported from **Creature**.
+A live web demonstration of a **running UtahRaptor** using the plugin in **Flash** and **HaxeFlixel** is [here](http://www.kestrelmoon.com/creature/WebDemo/demo_flash.html). The demo shows a dinosaur animated with deforming meshes exported from **Creature**.
 
 
 
