@@ -24,6 +24,7 @@ import haxe.Resource;
 import haxe.io.Bytes;
 import org.msgpack.MsgPack;
 import CreaturePackModule;
+import CreatureStage3DRenderer;
 import glm.Mat4;
 import glm.Projection;
 

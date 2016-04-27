@@ -1,6 +1,5 @@
-import flash.display.InterpolationMethod;
-import flash.display3D.textures.RectangleTexture;
-import flash.geom.Matrix3D;
+// This is the core Creature Haxe Runtime
+
 import haxe.Resource;
 import haxe.ds.HashMap;
 import haxe.io.Bytes;
@@ -8,15 +7,6 @@ import haxe.io.Float64Array;
 import org.msgpack.Decoder;
 import org.msgpack.MsgPack;
 import flash.Vector;
-import flash.display3D.Context3D;
-import flash.display3D.Context3DProgramType;
-import flash.display3D.Context3DVertexBufferFormat;
-import flash.display3D.IndexBuffer3D;
-import flash.display3D.VertexBuffer3D;
-import flash.display3D.Program3D;
-import flash.display3D.textures.Texture;
-
-import hxsl.Shader;
 
 class CreatureTimeSample
 {
@@ -348,68 +338,44 @@ class CreaturePackLoader {
 	
 }
 
-// A Basic Shader to render the Creature
-class CreatureShader extends hxsl.Shader {
-	static var SRC = {
-		var input : {
-			pos : Float3,
-			uv : Float2,
-			color : Float4,
-		};
-		
-		var tuv : Float2;
-		var tcolor : Float4;
-		
-		function vertex( mpos : M44, mproj : M44 ) {
-			out = input.pos.xyzw * mpos * mproj;
-			tuv = input.uv;
-			tcolor = input.color;
-		}
-		function fragment( tex : Texture ) {
-			out = tex.get(tuv) * tcolor;
-		}
-	};
-}
-
-// Renderer for the Creature character
-class CreatureStage3DRenderer {
-	var texture:RectangleTexture;
-	var mVertexBuffer:VertexBuffer3D;
-	var mColorBuffer:VertexBuffer3D;
-    var mUVBuffer:VertexBuffer3D;
-    var mIndexBuffer:IndexBuffer3D;
+// Base Renderer class that target renderers inherit from
+class CreatureHaxeBaseRenderer {
 	public var render_uvs : Vector<Float>;
 	public var render_points : Vector<Float>;
 	public var render_colors : Vector<Float>;
-
-	var ctx:Context3D;
-	var data:CreaturePackLoader;
-	var shader : CreatureShader;
-	public var transformMat : Matrix3D;
 	public var runTimeMap : Map<String, Float>;
 	public var isPlaying : Bool;
 	public var isLooping : Bool;
+	
+	var data:CreaturePackLoader;
 	var activeAnimationName : String;
 	var prevAnimationName : String;
 	var animBlendFactor : Float;
 	var animBlendDelta : Float;
 	
-	public function new(dataIn:CreaturePackLoader, textureIn:RectangleTexture, ctxIn:Context3D)
+	public function new(dataIn:CreaturePackLoader)
 	{
 		data = dataIn;
-		ctx = ctxIn;
-		texture = textureIn;
 		createRuntimeMap();
 		isPlaying = true;
 		isLooping = true;
 		animBlendFactor = 0;
 		animBlendDelta = 0;
+				
+		// create data buffers
+		render_points = new Vector<Float>(data.points.length);
+		render_uvs = new Vector<Float>(data.uvs.length);
+		render_colors = new Vector<Float>(Std.int(data.points.length / 2 * 4));
 		
-		transformMat = new Matrix3D();
-		transformMat.identity();
+		for (i in 0 ... render_colors.length)
+		{
+			render_colors[i] = 1.0;
+		}
 		
-		createBuffers();
-		shader = new CreatureShader();
+		for (i in 0 ... render_uvs.length)
+		{
+			render_uvs[i] = data.uvs[i];
+		}
 	}
 	
 	function createRuntimeMap()
@@ -450,25 +416,8 @@ class CreatureStage3DRenderer {
 		animBlendFactor = 0;
 		animBlendDelta = blendDelta;
 	}
-	
-	function createBuffers()
-	{
-		mVertexBuffer = ctx.createVertexBuffer(Std.int(data.points.length / 2), 2);
-		mUVBuffer = ctx.createVertexBuffer(Std.int(data.uvs.length / 2), 2);
-		mColorBuffer = ctx.createVertexBuffer(Std.int(data.uvs.length / 2), 4);
-		mIndexBuffer = ctx.createIndexBuffer(data.indices.length);
-		
-		render_points = new Vector<Float>(data.points.length);
-		render_uvs = new Vector<Float>(data.uvs.length);
-		render_colors = new Vector<Float>(Std.int(data.points.length / 2 * 4));
-		
-		for (i in 0 ... render_colors.length)
-		{
-			render_colors[i] = 1.0;
-		}
-	}
-	
-	public function setRunTime(timeIn : Float)
+
+		public function setRunTime(timeIn : Float)
 	{	
 		runTimeMap[activeAnimationName] = data.animClipMap[activeAnimationName].correctTime(timeIn, isLooping);
 	}
@@ -497,7 +446,7 @@ class CreatureStage3DRenderer {
 	}
 	
 	// Call this before a render to update the render data
-	public function syncRenderData()
+	public function syncRenderData() { 
 	{
 		// Points blending
 		if (activeAnimationName == prevAnimationName)
@@ -576,45 +525,21 @@ class CreatureStage3DRenderer {
 				}
 			}
 		}
-		
-		// UVs
-		{
-			var cur_clip : CreaturePackAnimClip =  data.animClipMap[activeAnimationName];
-			var cur_clip_info = cur_clip.sampleTime(getRunTime());
-			var low_data = cur_clip.timeSamplesMap[cur_clip_info.firstSampleIdx];
-			var anim_uvs : Array<Float> = data.fileData[low_data.getAnimUvsOffset()];
-			if (anim_uvs.length == render_uvs.length)
-			{
-				for (i in 0 ... render_uvs.length)
-				{
-					render_uvs[i] = anim_uvs[i];
-				}
-				mUVBuffer.uploadFromVector(render_uvs, 0, Std.int(render_uvs.length / 2));
-			}
-			else {
-				mUVBuffer.uploadFromVector(data.uvs, 0, Std.int(data.uvs.length / 2));
-			}
-		}
-		
-		// Indices, Points and Color
-		mIndexBuffer.uploadFromVector(data.indices, 0, data.indices.length);
-		mVertexBuffer.uploadFromVector(render_points, 0, Std.int(render_points.length / 2));
-		mColorBuffer.uploadFromVector(render_colors, 0, Std.int(render_points.length / 2));
-	}
 	
-	// Renders the creature given an input model view transfor matrix
-	public function render(mvpMatrix:Matrix3D)
-	{		
-		shader.mpos = transformMat;
-		shader.mproj = mvpMatrix;
-		shader.tex = texture;
-		
-        
-		shader.bindSimple(ctx, mVertexBuffer);
-		ctx.setVertexBufferAt(0, mVertexBuffer, 0, Context3DVertexBufferFormat.FLOAT_2); 
-        ctx.setVertexBufferAt(1, mUVBuffer, 0, Context3DVertexBufferFormat.FLOAT_2);
-        ctx.setVertexBufferAt(2, mColorBuffer, 0, Context3DVertexBufferFormat.FLOAT_4);
-		
-		ctx.drawTriangles(mIndexBuffer);
+			// UVs
+			{
+				var cur_clip : CreaturePackAnimClip =  data.animClipMap[activeAnimationName];
+				var cur_clip_info = cur_clip.sampleTime(getRunTime());
+				var low_data = cur_clip.timeSamplesMap[cur_clip_info.firstSampleIdx];
+				var anim_uvs : Array<Float> = data.fileData[low_data.getAnimUvsOffset()];
+				if (anim_uvs.length == render_uvs.length)
+				{
+					for (i in 0 ... render_uvs.length)
+					{
+						render_uvs[i] = anim_uvs[i];
+					}
+				}
+			}		
+		}
 	}
 }
