@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+	
+	<meta title="Creature Starling Demo" package="com.creaturedemo" version="1.0.0" company="Kestrel Moon Studios" />
+	<app main="Demo" file="Demo" path="bin" />
+
+	<window width="800" height="600" orientation="portrait" vsync="true" fps="60" hardware="true" allow-shaders="true" require-shaders="true" depth-buffer="false" stencil-buffer="true" background="0x000000" />
+	
+	<source path="src" />
+	<source path="../demo/src" />
+	<classpath name="../../CreatureHaxe" />
+
+	<haxelib name="starling" />
+
+	<assets path="../demo/assets/" rename="assets" />
+
+	<haxedef name="source-map-content" if="html5 || nodejs" />
+	<haxedef name="dom" if="html5" />
+
+	<haxedef name="disable_gl_renderer" unless="flash" />
+
+	<haxeflag name="-swf-version" value="15" if="flash" />
+	<haxeflag name="--macro" value="keep('starling.display.Sprite3D')" />
+	<haxeflag name="--macro" value="keep('starling.animation.Tween')" />
+    <haxeflag name="--macro" value="keep('starling.rendering.MeshStyle')" />
+	<haxeflag name="-dce" value="full" />
+	
+	<android minimum-sdk-version="9" target-sdk-version="19" /> 
+	
+</project>
