@@ -147,3 +147,37 @@ To setup and play the animation, take a look at the sample code below:
 	}
 
 You can adjust the playback speed by changing the **speed** variable on the **CreatureHaxeFlixelRenderer** object. You have access to the **CreatureHaxeBaseRenderer** object from the **CreatureHaxeFlixelRenderer** via the **creatureRender** variable. This allows you to blend, switch, stop etc. animations.
+
+
+###Starling Target
+There is a **CreatureStarlingRenderer** that works with **Starling**( https://github.com/openfl/starling )
+
+To setup and play your character animation, use the sample code below:
+
+		var curTexture = sAssets.getTexture("texture");
+		var curData = sAssets.getByteArray("data");
+		var creatureData = new CreaturePackLoader(curData);
+		
+		var texWidth = 512;
+		var texHeight = 512;
+		
+		// Load the Creature Starling Renderer
+		creature_render = new CreatureStarlingRenderer(creatureData, curTexture, 15, 15);
+		
+		addChild(creature_render);
+		
+		// Now set the position and playback speed
+		creature_render.x = 380;
+		creature_render.y = 250;
+		creature_render.speed = 100;
+		
+		// Set animation clip to cplay
+		creature_render.creatureRender.setActiveAnimation("default");
+		
+		// Do animation updates via timer, you can use your own update methods 
+		// for your own game
+		var timer = new Timer(16);
+		timer.run = function()
+		{
+			creature_render.update(1.0 / 60.0);
+		}
